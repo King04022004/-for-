@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <title>メイン画面</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: sans-serif; padding: 1em; max-width: 800px; margin: auto; }
+    h1, h2, h3 { color: #333; }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: top; }
+    thead { background-color: #f2f2f2; }
+    form { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9; }
+    input[type="text"], input[type="date"], input[type="time"], select, textarea { width: 98%; padding: 8px; margin: 5px 0; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box; }
+    button, input[type="submit"] { padding: 10px 15px; cursor: pointer; border: none; border-radius: 4px; color: white; background-color: #007bff; }
+    .btn-frame { margin-top: 10px; }
+    hr { margin: 40px 0; border: 1px solid #eee; }
+    .timeline-author { font-weight: bold; }
+    .timeline-meta { font-size: 0.9em; color: #666; }
+    :root{
+    --brand:#2563eb;          /* メイン色（青系） */
+    --text:#1f2937;            /* 文字色 */
+    --muted:#6b7280;           /* 補助文字色 */
+    --badge-bg:#eef2ff;        /* バッジ背景 */
+    --badge-border:rgba(37,99,235,.2);
+    --hover:#1d4ed8;           /* ホバー時 */
+    }
+    h1{
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+    font-size: clamp(22px, 3.4vw, 32px);
+    font-weight: 800;
+    letter-spacing: .2px;
+    margin: 6px 0 4px;
+    color: var(--text);
+    }
+    h1 + p{
+    margin: 0;
+    font-size: .95rem;
+    color: var(--muted);
+    }
+    h1 + p + p{
+    margin: 8px 0 6px;
+    }
+    #role_display{
+    display: inline-flex;
+    align-items: center;
+    gap: .4em;
+    padding: .25rem .6rem;
+    font-weight: 600;
+    font-size: .85rem;
+    color: #1e3a8a;
+    background: var(--badge-bg);
+    border: 1px solid var(--badge-border);
+    border-radius: 999px;
+    }
+    .logout-link{        
+    padding: .55rem .9rem;
+    border-radius: 10px;
+    text-decoration: none;
+    font-size: .9rem;
+    font-weight: 600;
+    background: var(--brand);
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(37,99,235,.18);
+    transition: background-color .2s ease, transform .04s ease, box-shadow .2s ease, opacity .2s ease;
+    }
+    .logout-link:hover{ background: var(--hover); box-shadow: 0 6px 16px rgba(37,99,235,.22); }
+    .logout-link:active{ transform: translateY(1px); }
+    hr{ margin: 20px 0 40px; /* ヘッダーとの間隔を少し調整 */
+      border: 1px solid #eee; }
+
+    /* ===== 追加 ===== */
+
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
+    .modal-content { background: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 500px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .modal-title { margin: 0; font-size: 1.25rem; }
+    .close-button{
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 24px;          /* 1.5rem→24pxで明確に */
+    line-height: 1;
+    color: #374151;           /* 文字色を明示 */
+    width: 40px; height: 40px;/* タップしやすいサイズ */
+    border-radius: 9999px;    /* 丸いタッチターゲット */
+    }
+    .close-button:hover{ background:#f3f4f6; color:#111827; }
+    .close-button:focus{ outline:2px solid #2563eb; outline-offset:2px; }
+
+    /* フィードバック送信ボタン */
+    .feedback-btn { background-color: #28a745; font-size: 0.9em; padding: 5px 10px; margin-top: 10px; }
+    .feedback-btn:hover { background-color: #218838; }
+
+    /* 通知エリア */
+    .notification-area { position: relative; display: inline-block; }
+    #notification-icon { font-size: 1.5rem; cursor: pointer; color: #888; }
+    #notification-icon.has-feedback { color: var(--brand); } /* 新着ありの色 */
+    .notification-dropdown { display: none; position: absolute; right: 0; top: 120%; background-color: white; min-width: 300px; max-width: 350px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); z-index: 1; border-radius: 5px; max-height: 400px; overflow-y: auto; }
+    .feedback-item { padding: 12px 16px; border-bottom: 1px solid #eee; }
+    .feedback-item:last-child { border-bottom: none; }
+    .feedback-item p { margin: 0 0 5px 0; }
+    .feedback-sender { font-weight: bold; font-size: 0.9rem; }
+    .feedback-datetime { font-size: 0.8rem; color: #777; float: right; }
+    
+
+    .header-container {
+    display: flex;
+    justify-content: space-between; /* 左右のブロックを両端に配置 */
+    align-items: flex-start;      /* 上揃えにして、高さの違いに対応 */
+    }
+
+    .header-right {
+    display: flex;
+    align-items: center; /* 通知アイコンとログアウトボタンを垂直方向に中央揃え */
+    gap: 1.2rem;         /* アイコンとボタンの間に隙間を空ける */
+    margin-top: 1rem;    /* タイトルとのバランスを見て少し下げる */
+    }
+  </style>
+
+  <script>
+  // --- グローバル変数 ---
+  let currentPage = 1;
+  const USER_ROLE = "<?= role ?>";
+  const USER_ID = "<?= userId ?>";
+
+  // --- ページ読み込み時の処理 ---
+  window.onload = function() {
+    document.getElementById('role_display').textContent = (USER_ROLE === 'paid_staff') ? '有給スタッフ' : '無給スタッフ';
+
+    google.script.run
+      .withSuccessHandler(updateTimeline)
+      .withFailureHandler(onServerError)
+      .getAllActivityLogs(currentPage);
+
+    google.script.run.withSuccessHandler(updateHistoryTable).getTimeClocks(); 
+    setNow();
+    
+    if (USER_ROLE !== 'paid_staff') {
+      google.script.run.withSuccessHandler(setupNotifications).getMyFeedbacks();
+    }
+  };
+
+  // --- サーバーエラー共通処理 ---
+  function onServerError(error) {
+    console.error("サーバーでエラーが発生しました:", error.message);
+    const timelineBody = document.getElementById('timeline_tbody');
+    if(timelineBody) {
+      timelineBody.innerHTML = `<tr><td colspan="2" style="color: red;">タイムラインの読み込みに失敗しました。(${error.message})</td></tr>`;
+    }
+  }
+  
+  // ===============================================
+  // ===== タイムライン機能 =====
+  // ===============================================
+
+  function updateTimeline(response) {
+    if (!response) {
+      onServerError({ message: "サーバーから応答がありませんでした。" });
+      return; 
+    }
+    const tbody = document.getElementById('timeline_tbody');
+    const loadMoreBtn = document.getElementById('load-more-btn');
+    if (currentPage === 1) {
+      tbody.innerHTML = '';
+    }
+    response.posts.forEach(log => {
+      let row = tbody.insertRow();
+      let cell1 = row.insertCell(0);
+      let cell2 = row.insertCell(1);
+      cell1.innerHTML = `<div class="timeline-author">${log.userName}</div><div class="timeline-meta">${log.datetime}</div>`;
+      let contentHTML = `<h4>${log.title}</h4><p>${log.content.replace(/\n/g, '<br>')}</p>`;
+      if (USER_ROLE === 'paid_staff' && log.userId !== USER_ID && log.userRole !== 'paid_staff') {
+        contentHTML += `<button class="feedback-btn" onclick="openFeedbackModal('${log.userId}', '${log.userName}')">フィードバックを送信</button>`;
+      }
+      cell2.innerHTML = contentHTML;
+    });
+    if (response.hasMore) {
+      loadMoreBtn.style.display = 'inline-block';
+    } else {
+      loadMoreBtn.style.display = 'none';
+    }
+  }
+  
+  function handleActivitySubmit(form) {
+    document.getElementById('activity_submit_message').textContent = '記録中...';
+    google.script.run
+      .withSuccessHandler(function(message) {
+        document.getElementById('activity_submit_message').textContent = message;
+        form.activity_title.value = '';
+        form.activity_content.value = '';
+        currentPage = 1;
+        google.script.run
+          .withSuccessHandler(updateTimeline)
+          .withFailureHandler(onServerError)
+          .getAllActivityLogs(currentPage);
+        setTimeout(() => { document.getElementById('activity_submit_message').textContent = ''; }, 3000);
+      })
+      .saveActivity(form);
+  }
+
+  function loadMorePosts() {
+    currentPage++; 
+    const loadMoreBtn = document.getElementById('load-more-btn');
+    loadMoreBtn.textContent = '読み込み中...';
+    google.script.run
+      .withSuccessHandler(function(response) {
+        updateTimeline(response); 
+        loadMoreBtn.textContent = 'さらに読み込む'; 
+      })
+      .withFailureHandler(onServerError)
+      .getAllActivityLogs(currentPage);
+  }
+
+  // ===============================================
+  // ===== フィードバック機能 =====
+  // ===============================================
+
+  function setupNotifications(feedbacks) {
+    const icon = document.getElementById('notification-icon');
+    const dropdown = document.getElementById('notification-dropdown');
+    dropdown.innerHTML = '';
+    if (feedbacks && feedbacks.length > 0) {
+      icon.classList.add('has-feedback');
+      feedbacks.forEach(fb => {
+        const item = document.createElement('div');
+        item.className = 'feedback-item';
+        item.innerHTML = `<div><span class="feedback-sender">${fb.senderName} さんから</span><span class="feedback-datetime">${fb.datetime}</span></div><p>${fb.content.replace(/\n/g, '<br>')}</p>`;
+        dropdown.appendChild(item);
+      });
+    } else {
+      icon.classList.remove('has-feedback');
+      const noItem = document.createElement('div');
+      noItem.className = 'feedback-item';
+      noItem.textContent = '新しいフィードバックはありません。';
+      dropdown.appendChild(noItem);
+    }
+    icon.onclick = function() {
+      dropdown.style.display = (dropdown.style.display === 'block') ? 'none' : 'block';
+    };
+    window.addEventListener('click', function(event) {
+      if (!icon.contains(event.target) && !dropdown.contains(event.target)) {
+        dropdown.style.display = 'none';
+      }
+    });
+  }
+
+  function openFeedbackModal(recipientId, recipientName) {
+    const modal = document.getElementById('feedback-modal');
+    document.getElementById('modal-recipient-id').value = recipientId;
+    document.getElementById('modal-title').textContent = `${recipientName} さんへのフィードバック`;
+    modal.style.display = 'flex';
+  }
+
+  function closeFeedbackModal() {
+    const modal = document.getElementById('feedback-modal');
+    modal.style.display = 'none';
+    document.getElementById('feedback-content').value = '';
+    document.getElementById('feedback-submit-message').textContent = '';
+  }
+
+  function handleFeedbackSubmit() {
+    const recipientId = document.getElementById('modal-recipient-id').value;
+    const content = document.getElementById('feedback-content').value;
+    if (!content.trim()) {
+      alert('内容を入力してください。');
+      return;
+    }
+    document.getElementById('feedback-submit-message').textContent = '送信中...';
+    const data = { recipientId: recipientId, content: content };
+    google.script.run
+      .withSuccessHandler(function(message) {
+        document.getElementById('feedback-submit-message').textContent = message;
+        setTimeout(() => { closeFeedbackModal(); }, 1500);
+      })
+      .withFailureHandler(function(err) {
+        document.getElementById('feedback-submit-message').textContent = 'エラー: ' + err.message;
+      })
+      .sendFeedback(data);
+  }
+  
+  // ===============================================
+  // ===== 勤怠管理・共通機能 =====
+  // ===============================================
+
+  function preventFormSubmit() {
+    var forms = document.querySelectorAll('form');
+    for (var i = 0; i < forms.length; i++) {
+      forms[i].addEventListener('submit', function(event) { event.preventDefault(); });
+    }
+  }
+  window.addEventListener('load', preventFormSubmit);
+
+  function updateHistoryTable(records) {
+    const tbody = document.getElementById('history_tbody');
+    tbody.innerHTML = '';
+    if (records && records.length > 0) {
+      records.reverse().forEach(record => {
+        let row = tbody.insertRow();
+        row.insertCell(0).textContent = record.type;
+        row.insertCell(1).textContent = record.date;
+      });
+    } else {
+      tbody.innerHTML = '<tr><td colspan="2">打刻履歴はありません。</td></tr>';
+    }
+  }
+
+  function setNow() {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mi = String(now.getMinutes()).padStart(2, '0');
+    document.querySelector('input[name="target_date"]').value = `${yyyy}-${mm}-${dd}`;
+    document.querySelector('input[name="target_time"]').value = `${hh}:${mi}`;
+  }
+
+  function handleWorkRecordFormSubmit(formObject) {
+    document.getElementById('wr_submit_message').innerHTML = '更新中....';
+    google.script.run
+      .withSuccessHandler(function(message) {
+        document.getElementById('wr_submit_message').innerHTML = message;
+        google.script.run.withSuccessHandler(updateHistoryTable).getTimeClocks();
+      })
+      .withFailureHandler(function(err) {
+        const msg = (err && err.message) ? err.message : String(err);
+        if (msg === 'ACTIVITY_REQUIRED') {
+          document.getElementById('wr_submit_message').innerHTML = '';
+          alert('退勤前に「活動内容の記録」を投稿してください。');
+          document.getElementById('activityForm').scrollIntoView({ behavior: 'smooth' });
+          document.querySelector('input[name="activity_title"]').focus();
+        } else {
+          document.getElementById('wr_submit_message').innerHTML = 'エラー: ' + msg;
+        }
+      })
+      .saveWorkRecord(formObject);
+  }
+</script>
+</head>
+<body>
+  <div class="header-container">
+    <div class="header-left">
+      <h1>メイン画面</h1>
+      <p>ようこそ、<?= userName ?> さん</p>
+      <p>あなたの役割: <span id="role_display"></span></p>
+    </div>
+    <div class="header-right">
+      <? if (role !== 'paid_staff') { ?>
+      <div class="notification-area">
+        <span id="notification-icon">🔔</span>
+        <div id="notification-dropdown" class="notification-dropdown">
+          </div>
+      </div>
+      <? } ?>
+      <a href="<?= getAppUrl() ?>?action=logout" class="logout-link">ログアウト</a>
+    </div>
+  </div>
+  <hr>
+  <form id="activityForm" onsubmit="handleActivitySubmit(this)">
+    <h3>活動内容の記録</h3>
+    <label>タイトル:</label>
+    <input type="text" name="activity_title" required>
+    <label>内容:</label>
+    <textarea name="activity_content" rows="4" required></textarea>
+    <div class="btn-frame">
+      <button type="submit">この内容で記録する</button>
+      <span id="activity_submit_message" style="color: green; margin-left: 10px;"></span>
+    </div>
+  </form>
+  <hr>
+
+  <h3>みんなの活動タイムライン</h3>
+  <table border="1">
+    <thead>
+      <tr>
+        <th style="width: 25%;">投稿者 / 日時</th>
+        <th style="width: 75%;">タイトル / 内容</th>
+      </tr>
+    </thead>
+    <tbody id="timeline_tbody">
+    </tbody>
+  </table>
+  <div id="load-more-wrapper" style="text-align: center; margin-top: 20px;">
+  <button id="load-more-btn" onclick="loadMorePosts()" style="display: none;">さらに読み込む</button>
+  </div>
+  <hr>
+
+  <div id="content">
+    <h3>今月のタイムレコーダー履歴</h3>
+    <table border="1">
+      <thead>
+        <tr>
+          <th>種別</th>
+          <th>日時</th>
+        </tr>
+      </thead>
+      <tbody id="history_tbody"></tbody>
+    </table>
+
+    <form id="workRecordForm" onsubmit="handleWorkRecordFormSubmit(this)">
+      <h3>タイムレコーダー</h3>
+      <div>
+        <label>対象日時: </label>
+        <input type="date" name="target_date" required/>
+        <input type="time" name="target_time" required/>
+        <br/>
+        <label>登録種別</label>
+        <select name="target_type">
+          <option value="clock_in">出勤</option>
+          <option value="break_begin">休憩開始</option>
+          <option value="break_end">休憩終了</option>
+          <option value="clock_out">退勤</option>
+        </select>
+        <div class="btn-frame">
+          <input type="submit" value="打刻登録" />
+          <span id="wr_submit_message" style="color: green; margin-left: 10px;"></span>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div id="feedback-modal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modal-title" class="modal-title">フィードバックを送信</h3>
+        <button type="button" onclick="closeFeedbackModal()" class="close-button" aria-label="閉じる" title="閉じる">×</button>
+      </div>
+      <input type="hidden" id="modal-recipient-id">
+      
+      <label for="feedback-content">内容:</label>
+      <textarea id="feedback-content" rows="5" placeholder="具体的なフィードバックを記入してください..."></textarea>
+      
+      <div class="btn-frame">
+        <button onclick="handleFeedbackSubmit()">送信する</button>
+        <span id="feedback-submit-message" style="color: green; margin-left: 10px;"></span>
+      </div>
+    </div>
+  </div>
+  </body>
+</html>
