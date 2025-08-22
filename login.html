@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+/* ページ全体の基本設定 */
+html, body {
+  height: 100%;
+  margin: 0;
+  background-color: #f4f7f9; /* 明るく清潔感のある背景色 */
+  font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+  display: flex;
+  justify-content: center; /* 水平方向中央揃え */
+  align-items: center;     /* 垂直方向中央揃え */
+}
+
+/* 縦並びにして h3 → form → メッセージ の順で中央配置 */
+body {
+  flex-direction: column;
+  padding: 20px; /* スマホでの端当たり防止 */
+}
+
+/* 見出し */
+h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  color: #222;
+  font-size: 28px;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* フォーム全体をカード風に */
+form {
+  width: 100%;
+  max-width: 400px;             /* 最大幅を固定 */
+  margin: 0 20px;               /* 端にくっつかない */
+  padding: 40px;
+  box-sizing: border-box;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1); /* はっきりめの影 */
+}
+
+/* ラベル */
+label {
+  display: inline-block;
+  color: #555;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* 従業員番号の入力欄 */
+input[type="text"] {
+  width: 100%;
+  margin-top: 8px;
+  margin-bottom: 25px;
+  padding: 14px 16px;
+  box-sizing: border-box;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+input[type="text"]:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+}
+
+/* JSで aria-invalid を付けた場合の視覚フィードバック（任意） */
+input[type="text"][aria-invalid="true"] {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.12);
+}
+
+/* ログインボタン */
+button[type="submit"] {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 8px;
+  background-color: #007bff;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, opacity 0.2s;
+}
+
+button[type="submit"]:hover {
+  background-color: #0056b3;
+}
+
+/* 二重送信防止で disabled にしたときの見た目（JS側が制御） */
+button[type="submit"][disabled] {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* ログインメッセージの表示エリア */
+#login_message {
+  margin-top: 20px;
+  min-height: 20px; /* メッセージがない時も高さを確保 */
+  color: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+}
+</style>
+
+  </head>
+  <body>
+    <h3>ログイン</h3>
+    <form onsubmit="return handleLogin(this)">
+      <label>従業員番号:</label>
+      <input type="text" name="userId" required>
+      <button type="submit">ログイン</button>
+    </form>
+    <div id="login_message"></div>
+
+    <script>
+  function handleLogin(form) {
+    console.log("1. handleLogin関数が開始されました。");
+    const userId = form.userId.value;
+    console.log("2. 従業員番号「" + userId + "」を取得しました。");
+    document.getElementById('login_message').innerText = 'ログイン中...';
+
+    console.log("3. これからサーバーを呼び出します。");
+    google.script.run
+      .withSuccessHandler(onLoginSuccess)
+      .withFailureHandler(onFailure) // ← エラー時の処理も追加
+      .loginUser(userId);
+
+    console.log("4. サーバーの呼び出し命令は完了しました（結果を待機中）。");
+    return false; 
+  }
+
+  function onLoginSuccess(url) {
+    console.log("5a. [成功] onLoginSuccessが呼び出されました。");
+    console.log("サーバーから返されたURLは→ " + url);
+    if (url) {
+      window.top.location.href = url;
+    } else {
+      document.getElementById('login_message').innerText = '従業員番号が見つかりません。';
+    }
+  }
+
+  // サーバー側でエラーが起きた場合に呼ばれる関数
+  function onFailure(error) {
+    console.log("5b. [失敗] onFailureが呼び出されました。");
+    console.error("サーバーでエラーが発生しました: " + error.message);
+    document.getElementById('login_message').innerText = 'サーバーでエラーが発生しました。';
+  }
+</script>
+  </body>
+</html>
